@@ -21,24 +21,16 @@ export class Web3Service {
   }
 
   async getWalletContent(network: string, wallet: string): Promise<Balance[]> {
-    try {
-      const tokenList: ChainToken[] = await this.getTokens(network);
-      const filteredTokenList: ChainToken[] = this.filterTokenList(tokenList);
+    const tokenList: ChainToken[] = await this.getTokens(network);
+    const filteredTokenList: ChainToken[] = this.filterTokenList(tokenList);
 
-      const amounts: any[] = await this.getAmounts(filteredTokenList, wallet);
-      const content: Balance[] = await this.formatContent(
-        filteredTokenList,
-        amounts,
-      );
+    const amounts: any[] = await this.getAmounts(filteredTokenList, wallet);
+    const content: Balance[] = await this.formatContent(
+      filteredTokenList,
+      amounts,
+    );
 
-      return content;
-    } catch (error) {
-      this.logger.error(error, 'Failed to retrieve wallet content');
-      throw new HttpException(
-        'Failed to retrieve wallet content',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    return content;
   }
 
   async getTokens(chain: string): Promise<ChainToken[]> {
@@ -48,14 +40,9 @@ export class Web3Service {
       // retrieve token list from URL
       return (await this.httpService.axiosRef.get(tokenSource)).data;
     } catch (error) {
-      this.logger.error(
-        error,
-        'Failed to retrieve token list from blockchain network',
-      );
-      throw new HttpException(
-        'Failed to retrieve token list from blockchain network',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      const errorMessage = `Failed to retrieve token list for ${chain}`;
+      this.logger.error(error, errorMessage);
+      throw new HttpException(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -81,11 +68,9 @@ export class Web3Service {
         )
       ).data;
     } catch (error) {
-      this.logger.error(error, 'Failed to retrieve ERC20 ABI');
-      throw new HttpException(
-        'Failed to retrieve ERC20 ABI',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      const errorMessage = 'Failed to retrieve ERC20 ABI';
+      this.logger.error(error, errorMessage);
+      throw new HttpException(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -93,53 +78,65 @@ export class Web3Service {
     filteredTokenList: ChainToken[],
     wallet: string,
   ): Promise<number[]> {
-    // any is used here because of balanceOf() definition in ERC20 ABI
-    const proms: Promise<any>[] = [];
-    const ERC20_ABI: AbiItem = await this.getERC20ABI();
+    try {
+      // any is used here because of balanceOf() definition in ERC20 ABI
+      const proms: Promise<any>[] = [];
+      const ERC20_ABI: AbiItem = await this.getERC20ABI();
 
-    for (const token of filteredTokenList) {
-      // create ERC20 token contract instance
-      const contract: Contract = new this.web3Instance.eth.Contract(
-        ERC20_ABI,
-        token.address,
-      );
-      // save request in array of Promises
-      proms.push(contract.methods.balanceOf(wallet));
+      for (const token of filteredTokenList) {
+        // create ERC20 token contract instance
+        const contract: Contract = new this.web3Instance.eth.Contract(
+          ERC20_ABI,
+          token.address,
+        );
+        // save request in array of Promises
+        proms.push(contract.methods.balanceOf(wallet));
+      }
+
+      // any is used here because of balanceOf() definition in ERC20 ABI
+      const promiseResults: any[] = await Promise.all(proms);
+
+      return promiseResults;
+    } catch (error) {
+      const errorMessage = `Failed to retrieve amounts for ${wallet}`;
+      this.logger.error(error, errorMessage);
+      throw new HttpException(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
     }
-
-    // any is used here because of balanceOf() definition in ERC20 ABI
-    const promiseResults: any[] = await Promise.all(proms);
-
-    return promiseResults;
   }
 
   async formatContent(
     filteredTokenList: ChainToken[],
     amounts: any[],
   ): Promise<Balance[]> {
-    const content: Balance[] = [];
+    try {
+      const content: Balance[] = [];
 
-    // loop through all responses to format response
-    for (let index = 0; index < filteredTokenList.length; index++) {
-      // any is used here because of balanceOf() definition in ERC20 ABI
-      const balance: string = await (amounts[index] as any).call();
+      // loop through all responses to format response
+      for (let index = 0; index < filteredTokenList.length; index++) {
+        // any is used here because of balanceOf() definition in ERC20 ABI
+        const balance: string = await (amounts[index] as any).call();
 
-      //   transforms balance to decimal
-      const formattedBalance: number = this.convertToNumber(
-        balance,
-        filteredTokenList[index].decimals,
-      );
+        //   transforms balance to decimal
+        const formattedBalance: number = this.convertToNumber(
+          balance,
+          filteredTokenList[index].decimals,
+        );
 
-      // save balance with token name and symbol
-      content.push({
-        address: filteredTokenList[index].address,
-        name: filteredTokenList[index].name,
-        symbol: filteredTokenList[index].symbol,
-        decimals: filteredTokenList[index].decimals,
-        balance: formattedBalance,
-      });
+        // save balance with token name and symbol
+        content.push({
+          address: filteredTokenList[index].address,
+          name: filteredTokenList[index].name,
+          symbol: filteredTokenList[index].symbol,
+          decimals: filteredTokenList[index].decimals,
+          balance: formattedBalance,
+        });
+      }
+
+      return content;
+    } catch (error) {
+      const errorMessage = 'Failed to format wallet content';
+      this.logger.error(error, errorMessage);
+      throw new HttpException(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
     }
-
-    return content;
   }
 }

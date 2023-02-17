@@ -1,8 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 
 @Injectable()
 export class PricingService {
+  private readonly logger = new Logger(PricingService.name);
+
   constructor(private readonly httpService: HttpService) {}
 
   async addUsdValues(balances: Balance[]): Promise<Balance[]> {
@@ -36,10 +38,19 @@ export class PricingService {
     return balancesWithUSD;
   }
 
-  getTokenList = async (): Promise<CoingeckoToken[]> =>
-    this.httpService.axiosRef
-      .get(`https://api.coingecko.com/api/v3/coins/list?include_platform=false`)
-      .then((response) => response.data);
+  getTokenList = async (): Promise<CoingeckoToken[]> => {
+    try {
+      return this.httpService.axiosRef
+        .get(
+          `https://api.coingecko.com/api/v3/coins/list?include_platform=false`,
+        )
+        .then((response) => response.data);
+    } catch (error) {
+      const errorMessage = `Failed to retrieve token list from Coingecko`;
+      this.logger.error(error, errorMessage);
+      throw new HttpException(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  };
 
   filterTokenList(
     tokenList: CoingeckoToken[],
@@ -61,21 +72,27 @@ export class PricingService {
     tokenIds: string[],
     idMapping: IdMapping,
   ): Promise<TokenPrices> => {
-    const usdPricings: TokenPrices = {};
-    const joinedTokenIds = tokenIds.join('%2C');
-    const addedTokenPrices = (
-      await this.httpService.axiosRef.get(
-        `https://api.coingecko.com/api/v3/simple/price?ids=${joinedTokenIds}&vs_currencies=usd`,
-      )
-    ).data;
+    try {
+      const usdPricings: TokenPrices = {};
+      const joinedTokenIds = tokenIds.join('%2C');
+      const addedTokenPrices = (
+        await this.httpService.axiosRef.get(
+          `https://api.coingecko.com/api/v3/simple/price?ids=${joinedTokenIds}&vs_currencies=usd`,
+        )
+      ).data;
 
-    for (const name in idMapping) {
-      const id: string = idMapping[name];
+      for (const name in idMapping) {
+        const id: string = idMapping[name];
 
-      usdPricings[name] = addedTokenPrices[id].usd;
+        usdPricings[name] = addedTokenPrices[id].usd;
+      }
+
+      return usdPricings;
+    } catch (error) {
+      const errorMessage = `Failed to retrieve token prices from Coingecko`;
+      this.logger.error(error, errorMessage);
+      throw new HttpException(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
     }
-
-    return usdPricings;
   };
 
   calculateBalanceUsd = (

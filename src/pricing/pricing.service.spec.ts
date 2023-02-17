@@ -16,15 +16,6 @@ describe('PricingService', () => {
     httpService = module.get<HttpService>(HttpService);
   });
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      imports: [HttpModule],
-      providers: [PricingService],
-    }).compile();
-
-    pricingService = module.get<PricingService>(PricingService);
-  });
-
   it('should be defined', () => {
     expect(pricingService).toBeDefined();
   });

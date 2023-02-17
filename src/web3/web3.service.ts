@@ -21,53 +21,16 @@ export class Web3Service {
 
   async getWalletContent(network: string, wallet: string): Promise<Balance[]> {
     try {
-      // any is used here because of balanceOf() definition in ERC20 ABI
-      const proms: Promise<any>[] = [];
-      const results: Balance[] = [];
-      const ERC20_ABI: AbiItem = (
-        await this.httpService.axiosRef.get(
-          'https://gist.githubusercontent.com/veox/8800debbf56e24718f9f483e1e40c35c/raw/f853187315486225002ba56e5283c1dba0556e6f/erc20.abi.json',
-        )
-      ).data;
-
       const tokenList: ChainToken[] = await this.getTokens(network);
       const filteredTokenList: ChainToken[] = this.filterTokenList(tokenList);
 
-      for (const token of filteredTokenList) {
-        // create ERC20 token contract instance
-        const contract: Contract = new this.web3Instance.eth.Contract(
-          ERC20_ABI,
-          token.address,
-        );
-        // save request in array of Promises
-        proms.push(contract.methods.balanceOf(wallet));
-      }
+      const amounts: any[] = await this.getAmounts(filteredTokenList, wallet);
+      const content: Balance[] = await this.formatContent(
+        filteredTokenList,
+        amounts,
+      );
 
-      // actually requests all balances simultaneously
-      // any is used here because of balanceOf() definition in ERC20 ABI
-      const promiseResults: any[] = await Promise.all(proms);
-
-      // loop through all responses to format response
-      for (let index = 0; index < filteredTokenList.length; index++) {
-        const balance: string = await (promiseResults[index] as any).call();
-
-        //   transforms balance to decimal
-        const formattedBalance: number = this.convertToNumber(
-          balance,
-          filteredTokenList[index].decimals,
-        );
-
-        // save balance with token name and symbol
-        results.push({
-          address: filteredTokenList[index].address,
-          name: filteredTokenList[index].name,
-          symbol: filteredTokenList[index].symbol,
-          decimals: filteredTokenList[index].decimals,
-          balance: formattedBalance,
-        });
-      }
-
-      return results;
+      return content;
     } catch (error) {
       console.error(error);
       throw new Error(`Error while getting wallet content: ${error.message}`);
@@ -98,5 +61,72 @@ export class Web3Service {
     );
 
     return filteredTokenList;
+  }
+
+  async getERC20ABI(): Promise<AbiItem> {
+    try {
+      return (
+        await this.httpService.axiosRef.get(
+          'https://gist.githubusercontent.com/veox/8800debbf56e24718f9f483e1e40c35c/raw/f853187315486225002ba56e5283c1dba0556e6f/erc20.abi.json',
+        )
+      ).data;
+    } catch (error) {
+      console.error(error);
+      throw new Error(`Failed to retrieve ERC20 ABI`);
+    }
+  }
+
+  async getAmounts(
+    filteredTokenList: ChainToken[],
+    wallet: string,
+  ): Promise<number[]> {
+    // any is used here because of balanceOf() definition in ERC20 ABI
+    const proms: Promise<any>[] = [];
+    const ERC20_ABI: AbiItem = await this.getERC20ABI();
+
+    for (const token of filteredTokenList) {
+      // create ERC20 token contract instance
+      const contract: Contract = new this.web3Instance.eth.Contract(
+        ERC20_ABI,
+        token.address,
+      );
+      // save request in array of Promises
+      proms.push(contract.methods.balanceOf(wallet));
+    }
+
+    // any is used here because of balanceOf() definition in ERC20 ABI
+    const promiseResults: any[] = await Promise.all(proms);
+
+    return promiseResults;
+  }
+
+  async formatContent(
+    filteredTokenList: ChainToken[],
+    amounts: any[],
+  ): Promise<Balance[]> {
+    const content: Balance[] = [];
+
+    // loop through all responses to format response
+    for (let index = 0; index < filteredTokenList.length; index++) {
+      // any is used here because of balanceOf() definition in ERC20 ABI
+      const balance: string = await (amounts[index] as any).call();
+
+      //   transforms balance to decimal
+      const formattedBalance: number = this.convertToNumber(
+        balance,
+        filteredTokenList[index].decimals,
+      );
+
+      // save balance with token name and symbol
+      content.push({
+        address: filteredTokenList[index].address,
+        name: filteredTokenList[index].name,
+        symbol: filteredTokenList[index].symbol,
+        decimals: filteredTokenList[index].decimals,
+        balance: formattedBalance,
+      });
+    }
+
+    return content;
   }
 }

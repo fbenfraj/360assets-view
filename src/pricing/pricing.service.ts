@@ -78,19 +78,12 @@ export class PricingService {
     return usdPricings;
   };
 
-  // parseFloat(
-  //   (
-  //     (usdPricings[balance.name] as number) *
-  //     (balance.balance as number)
-  //   ).toFixed(2),
-  // ) || 0,
-
   calculateBalanceUsd = (
     balance: Balance,
     usdPricings: TokenPrices,
   ): number => {
     const name: string = balance.name;
-    const unitPrice: number = usdPricings[name];
+    const unitPrice: number = usdPricings[name] || 0;
     const amount: number = balance.balance;
     const result: string = (unitPrice * amount).toFixed(2);
 

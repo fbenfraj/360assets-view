@@ -4,6 +4,12 @@ type CoingeckoToken = {
   name: string;
 };
 
+type CoingeckoPrices = {
+  [tokenId: string]: {
+    usd: number;
+  };
+};
+
 type TokenPrices = {
   [key: string]: number;
 };

@@ -11,8 +11,8 @@ export class BalancesService {
 
   async getBalances(network: string, address: string) {
     const balances = await this.web3Service.getWalletContent(network, address);
-    const balancesWithUSD = await this.pricingService.addUSDValues(balances);
+    const balancesWithUsd = await this.pricingService.addUsdValues(balances);
 
-    return balancesWithUSD;
+    return balancesWithUsd;
   }
 }

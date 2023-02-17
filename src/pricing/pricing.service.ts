@@ -5,56 +5,95 @@ import { HttpService } from '@nestjs/axios';
 export class PricingService {
   constructor(private readonly httpService: HttpService) {}
 
-  async addUSDValues(balances) {
-    // get tokenlist from coingecko api
-    const tokenList = (
-      await this.httpService.axiosRef.get(
-        `https://api.coingecko.com/api/v3/coins/list?include_platform=false`,
-      )
-    ).data;
+  async addUsdValues(balances: Balance[]): Promise<Balance[]> {
+    const balanceNames: string[] = balances.map(
+      (balance: Balance) => balance.name,
+    );
+    const tokenList: CoingeckoToken[] = await this.getTokenList();
+    const filteredTokenList: CoingeckoToken[] = this.filterTokenList(
+      tokenList,
+      balanceNames,
+    );
+    const addedTokenIds: string[] = filteredTokenList.map(
+      (token: CoingeckoToken) => token.id,
+    );
+    const idMapping: IdMapping = this.mapIdsToNames(
+      filteredTokenList,
+      balanceNames,
+    );
+    const usdPricings: TokenPrices = await this.getTokenPrices(
+      addedTokenIds,
+      idMapping,
+    );
 
-    const balanceNames = balances.map((balance) => balance.name);
+    const balancesWithUSD: Balance[] = balances.map((balance) => {
+      return {
+        ...balance,
+        balanceUsd: this.calculateBalanceUsd(balance, usdPricings),
+      };
+    });
 
-    // get ids of added tokens
-    const addedTokenIds = tokenList
-      .filter((token) => balanceNames.includes(token.name))
-      .map((token) => token.id);
+    return balancesWithUSD;
+  }
 
-    const idMapping = tokenList
-      .filter((token) => balanceNames.includes(token.name))
+  getTokenList = async (): Promise<CoingeckoToken[]> =>
+    this.httpService.axiosRef
+      .get(`https://api.coingecko.com/api/v3/coins/list?include_platform=false`)
+      .then((response) => response.data);
+
+  filterTokenList(
+    tokenList: CoingeckoToken[],
+    addedTokens: string[],
+  ): CoingeckoToken[] {
+    return tokenList.filter((token) => addedTokens.includes(token.name));
+  }
+
+  mapIdsToNames(tokenList: CoingeckoToken[], addedTokens: string[]): IdMapping {
+    return tokenList
+      .filter((token) => addedTokens.includes(token.name))
       .reduce((acc, token) => {
         acc[token.name] = token.id;
         return acc;
       }, {});
+  }
 
-    const joinedTokenIds = addedTokenIds.join('%2C');
-
-    // get usd prices of added tokens
+  getTokenPrices = async (
+    tokenIds: string[],
+    idMapping: IdMapping,
+  ): Promise<TokenPrices> => {
+    const usdPricings: TokenPrices = {};
+    const joinedTokenIds = tokenIds.join('%2C');
     const addedTokenPrices = (
       await this.httpService.axiosRef.get(
         `https://api.coingecko.com/api/v3/simple/price?ids=${joinedTokenIds}&vs_currencies=usd`,
       )
     ).data;
 
-    const usdPricings = {};
-
     for (const name in idMapping) {
-      const id = idMapping[name];
+      const id: string = idMapping[name];
+
       usdPricings[name] = addedTokenPrices[id].usd;
     }
 
-    // add usd price to each item in balances using usdPricings object
-    const balancesWithUSD = balances.map((balance) => {
-      return {
-        ...balance,
-        balanceUsd: parseFloat(
-          (
-            (usdPricings[balance.name] as number) * (balance.balance as number)
-          ).toFixed(2),
-        ),
-      };
-    });
+    return usdPricings;
+  };
 
-    return balancesWithUSD;
-  }
+  // parseFloat(
+  //   (
+  //     (usdPricings[balance.name] as number) *
+  //     (balance.balance as number)
+  //   ).toFixed(2),
+  // ) || 0,
+
+  calculateBalanceUsd = (
+    balance: Balance,
+    usdPricings: TokenPrices,
+  ): number => {
+    const name: string = balance.name;
+    const unitPrice: number = usdPricings[name];
+    const amount: number = balance.balance;
+    const result: string = (unitPrice * amount).toFixed(2);
+
+    return parseFloat(result);
+  };
 }

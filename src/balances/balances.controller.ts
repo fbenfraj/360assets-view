@@ -12,11 +12,7 @@ export class BalancesController {
     @Param('address') address: string,
     @Res() res: Response,
   ) {
-    try {
-      const balances = await this.balancesService.getBalances(network, address);
-      res.send(balances);
-    } catch (error) {
-      res.status(500).send({ error: 'Failed to retrieve token balances' });
-    }
+    const balances = await this.balancesService.getBalances(network, address);
+    res.send(balances);
   }
 }

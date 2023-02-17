@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Logger, Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TOKEN_LISTS, ADDED_TOKENS } from '../../config/token-lists';
 import { HttpService } from '@nestjs/axios';
@@ -9,6 +9,7 @@ import Web3 from 'web3';
 @Injectable()
 export class Web3Service {
   private web3Instance: Web3;
+  private readonly logger = new Logger(Web3Service.name);
 
   constructor(
     private readonly configService: ConfigService,
@@ -32,8 +33,11 @@ export class Web3Service {
 
       return content;
     } catch (error) {
-      console.error(error);
-      throw new Error(`Error while getting wallet content: ${error.message}`);
+      this.logger.error(error, 'Failed to retrieve wallet content');
+      throw new HttpException(
+        'Failed to retrieve wallet content',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -44,8 +48,14 @@ export class Web3Service {
       // retrieve token list from URL
       return (await this.httpService.axiosRef.get(tokenSource)).data;
     } catch (error) {
-      console.error(error);
-      throw new Error(`Failed to retrieve token list for chain ${chain}`);
+      this.logger.error(
+        error,
+        'Failed to retrieve token list from blockchain network',
+      );
+      throw new HttpException(
+        'Failed to retrieve token list from blockchain network',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -71,8 +81,11 @@ export class Web3Service {
         )
       ).data;
     } catch (error) {
-      console.error(error);
-      throw new Error(`Failed to retrieve ERC20 ABI`);
+      this.logger.error(error, 'Failed to retrieve ERC20 ABI');
+      throw new HttpException(
+        'Failed to retrieve ERC20 ABI',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 

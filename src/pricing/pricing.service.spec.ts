@@ -128,14 +128,12 @@ describe('PricingService', () => {
   });
 
   it('should return an array of balances with USD values calculated', async () => {
-    // Get the expected balances with USD values calculated by making a real HTTP request to the CoinGecko API
     const usdPrices: CoingeckoPrices = (
       await httpService.axiosRef.get(
         'https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=usd',
       )
     ).data;
 
-    // expect usdPrices to be an object with a key of 'tether' and a value of an object with a key of 'usd' and a value of a number
     expect(usdPrices).toHaveProperty('tether');
     expect(usdPrices.tether).toHaveProperty('usd');
     expect(typeof usdPrices.tether.usd).toBe('number');
@@ -167,7 +165,6 @@ describe('PricingService', () => {
     const endTime: number = Date.now();
     const duration: number = endTime - startTime;
 
-    // Expect the function to complete within a reasonable amount of time
     expect(duration).toBeLessThan(100);
     expect(result.length).toEqual(numberOfBalances);
   });

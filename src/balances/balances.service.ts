@@ -9,7 +9,13 @@ export class BalancesService {
     private readonly pricingService: PricingService,
   ) {}
 
-  async getBalances(network: string, address: string) {
+  /**
+   * Returns an array of balances for a wallet, along with their respective USD values.
+   * @param {string} network - The blockchain network to get the balances for.
+   * @param {string} address - The address of the wallet to get the balances for.
+   * @returns {Promise<Balance[]>} An array of balances with their respective USD values.
+   */
+  async getBalances(network: string, address: string): Promise<Balance[]> {
     const balances: Balance[] = await this.web3Service.getWalletContent(
       network,
       address,

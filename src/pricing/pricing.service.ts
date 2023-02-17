@@ -47,8 +47,11 @@ export class PricingService {
     const balancesWithUSD = balances.map((balance) => {
       return {
         ...balance,
-        balanceUsd:
-          (usdPricings[balance.name] as number) * (balance.balance as number),
+        balanceUsd: parseFloat(
+          (
+            (usdPricings[balance.name] as number) * (balance.balance as number)
+          ).toFixed(2),
+        ),
       };
     });
 

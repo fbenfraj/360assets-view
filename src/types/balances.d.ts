@@ -4,5 +4,5 @@ type Balance = {
   symbol: string;
   decimals: number;
   balance: number;
-  balanceUsd: number;
+  balanceUsd?: number;
 };

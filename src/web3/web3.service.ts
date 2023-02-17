@@ -1,76 +1,62 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Eth } from 'web3-eth';
 import { TOKEN_LISTS, ADDED_TOKENS } from '../../config/token-lists';
 import { HttpService } from '@nestjs/axios';
-import * as Web3 from 'web3';
+import { AbiItem } from 'web3-utils';
+import { Contract } from 'web3-eth-contract';
+import Web3 from 'web3';
 
 @Injectable()
 export class Web3Service {
-  private client: Eth;
+  private web3Instance: Web3;
 
   constructor(
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
   ) {
-    this.client = new (Web3 as any)(
+    this.web3Instance = new Web3(
       this.configService.get<string>('WEB3_RPC_ENDPOINT'),
-    ).eth;
-  }
-
-  async getTokens(chain: string) {
-    try {
-      // get token list file URL by chain
-      const tokenSource = TOKEN_LISTS[chain];
-      // retrieve token list from URL
-      const response = await this.httpService.axiosRef.get(tokenSource);
-
-      return response.data;
-    } catch (error) {
-      console.error(error);
-      throw new Error(`Failed to retrieve token list for chain ${chain}`);
-    }
-  }
-
-  async getSingleTokenBalance(token, wallet: string) {
-    const ERC20_ABI = await this.httpService.axiosRef.get(
-      'https://gist.githubusercontent.com/veox/8800debbf56e24718f9f483e1e40c35c/raw/f853187315486225002ba56e5283c1dba0556e6f/erc20.abi.json',
     );
-    const contract = new this.client.Contract(ERC20_ABI.data, token.address);
-    const balance = await contract.methods.balanceOf(wallet).call();
-
-    return balance;
   }
 
-  async getWalletContent(network: string, wallet: string) {
+  async getWalletContent(network: string, wallet: string): Promise<Balance[]> {
     try {
-      const proms = [];
-      const results = [];
-      const ERC20_ABI = await this.httpService.axiosRef.get(
-        'https://gist.githubusercontent.com/veox/8800debbf56e24718f9f483e1e40c35c/raw/f853187315486225002ba56e5283c1dba0556e6f/erc20.abi.json',
-      );
+      // any is used here because of balanceOf() definition in ERC20 ABI
+      const proms: Promise<any>[] = [];
+      const results: Balance[] = [];
+      const ERC20_ABI: AbiItem = (
+        await this.httpService.axiosRef.get(
+          'https://gist.githubusercontent.com/veox/8800debbf56e24718f9f483e1e40c35c/raw/f853187315486225002ba56e5283c1dba0556e6f/erc20.abi.json',
+        )
+      ).data;
 
-      const tokenList = await this.getTokens(network);
-      const filteredTokenList = this.filterTokenList(tokenList);
+      const tokenList: ChainToken[] = await this.getTokens(network);
+      const filteredTokenList: ChainToken[] = this.filterTokenList(tokenList);
 
-      for (const tkn of filteredTokenList) {
+      for (const token of filteredTokenList) {
         // create ERC20 token contract instance
-        const erc20 = new this.client.Contract(ERC20_ABI.data, tkn.address);
+        const contract: Contract = new this.web3Instance.eth.Contract(
+          ERC20_ABI,
+          token.address,
+        );
         // save request in array of Promises
-        proms.push(erc20.methods.balanceOf(wallet));
+        proms.push(contract.methods.balanceOf(wallet));
       }
 
       // actually requests all balances simultaneously
-      const promiseResults = await Promise.allSettled(proms);
+      // any is used here because of balanceOf() definition in ERC20 ABI
+      const promiseResults: any[] = await Promise.all(proms);
 
       // loop through all responses to format response
       for (let index = 0; index < filteredTokenList.length; index++) {
-        const balance = await (promiseResults[index] as any).value.call();
+        const balance: string = await (promiseResults[index] as any).call();
+
         //   transforms balance to decimal
-        const formattedBalance = this.convertToNumber(
+        const formattedBalance: number = this.convertToNumber(
           balance,
           filteredTokenList[index].decimals,
         );
+
         // save balance with token name and symbol
         results.push({
           address: filteredTokenList[index].address,
@@ -88,14 +74,28 @@ export class Web3Service {
     }
   }
 
-  convertToNumber(value, decimals = 18) {
-    return value / 10 ** decimals;
+  async getTokens(chain: string): Promise<ChainToken[]> {
+    try {
+      // get token list file URL by chain
+      const tokenSource: string = TOKEN_LISTS[chain];
+      // retrieve token list from URL
+      return (await this.httpService.axiosRef.get(tokenSource)).data;
+    } catch (error) {
+      console.error(error);
+      throw new Error(`Failed to retrieve token list for chain ${chain}`);
+    }
   }
 
-  filterTokenList(tokenList) {
-    const filteredTokenList = tokenList.filter((token) => {
-      return ADDED_TOKENS.includes(token.address);
-    });
+  convertToNumber(value: string, decimals = 18): number {
+    return parseInt(value) / 10 ** decimals;
+  }
+
+  filterTokenList(tokenList: ChainToken[]): ChainToken[] {
+    const filteredTokenList: ChainToken[] = tokenList.filter(
+      (token: ChainToken) => {
+        return ADDED_TOKENS.includes(token.address);
+      },
+    );
 
     return filteredTokenList;
   }

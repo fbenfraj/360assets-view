@@ -2,6 +2,7 @@ import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Web3Service } from './web3.service';
+import Web3 from 'web3';
 
 describe('Web3Service', () => {
   let web3Service: Web3Service;
@@ -100,5 +101,13 @@ describe('Web3Service', () => {
         ),
       ).toBe(true);
     });
+  });
+
+  it('should return a Web3 instance for the specified network', () => {
+    const network = 'poly';
+    const result: Web3 = web3Service.getWeb3Instance(network);
+
+    expect(result).toBeDefined();
+    expect(result).toBeInstanceOf(Web3);
   });
 });

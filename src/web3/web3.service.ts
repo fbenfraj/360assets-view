@@ -190,6 +190,11 @@ export class Web3Service {
     }
   }
 
+  /**
+   * Returns a Web3 instance for the specified network
+   * @param network - The blockchain network to get the Web3 instance for
+   * @returns A Web3 instance for the specified network
+   */
   getWeb3Instance(network: string): Web3 {
     switch (network) {
       case 'eth':

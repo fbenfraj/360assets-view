@@ -3,13 +3,14 @@ import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Web3Service } from './web3.service';
 import Web3 from 'web3';
+import { CacheModule } from '@nestjs/common';
 
 describe('Web3Service', () => {
   let web3Service: Web3Service;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [ConfigModule, HttpModule],
+      imports: [ConfigModule, HttpModule, CacheModule.register({})],
       providers: [Web3Service],
     }).compile();
 

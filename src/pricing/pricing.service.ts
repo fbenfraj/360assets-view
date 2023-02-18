@@ -1,11 +1,22 @@
-import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import {
+  CACHE_MANAGER,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class PricingService {
   private readonly logger = new Logger(PricingService.name);
 
-  constructor(private readonly httpService: HttpService) {}
+  constructor(
+    private readonly httpService: HttpService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) {}
 
   /**
    * Adds USD values to an array of Balance objects
@@ -106,12 +117,21 @@ export class PricingService {
   ): Promise<TokenPrices> => {
     try {
       const usdPricings: TokenPrices = {};
-      const joinedTokenIds = tokenIds.join('%2C');
-      const addedTokenPrices = (
-        await this.httpService.axiosRef.get(
-          `https://api.coingecko.com/api/v3/simple/price?ids=${joinedTokenIds}&vs_currencies=usd`,
-        )
-      ).data;
+      const joinedTokenIds: string = tokenIds.join('%2C');
+
+      let addedTokenPrices: CoingeckoPrices = await this.cacheManager.get(
+        joinedTokenIds,
+      );
+
+      if (!addedTokenPrices) {
+        addedTokenPrices = (
+          await this.httpService.axiosRef.get(
+            `https://api.coingecko.com/api/v3/simple/price?ids=${joinedTokenIds}&vs_currencies=usd`,
+          )
+        ).data;
+
+        await this.cacheManager.set(joinedTokenIds, addedTokenPrices);
+      }
 
       for (const name in idMapping) {
         const id: string = idMapping[name];

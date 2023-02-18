@@ -1,10 +1,18 @@
-import { Logger, Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Logger,
+  Injectable,
+  HttpException,
+  HttpStatus,
+  CACHE_MANAGER,
+  Inject,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TOKEN_LIST_SOURCES, ADDED_TOKENS } from '../../config/token-lists';
 import { HttpService } from '@nestjs/axios';
 import { AbiItem } from 'web3-utils';
 import { Contract } from 'web3-eth-contract';
 import Web3 from 'web3';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class Web3Service {
@@ -16,6 +24,7 @@ export class Web3Service {
   constructor(
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {
     this.ethWeb3 = new Web3(this.configService.get<string>('ETH_RPC_ENDPOINT'));
     this.polyWeb3 = new Web3(
@@ -67,7 +76,16 @@ export class Web3Service {
   async getTokens(chain: string): Promise<ChainToken[]> {
     try {
       const tokenSource: string = TOKEN_LIST_SOURCES[chain];
-      return (await this.httpService.axiosRef.get(tokenSource)).data;
+
+      let tokens: ChainToken[] = await this.cacheManager.get(tokenSource);
+
+      if (!tokens) {
+        tokens = (await this.httpService.axiosRef.get(tokenSource)).data;
+      }
+
+      await this.cacheManager.set(tokenSource, tokens);
+
+      return tokens;
     } catch (error) {
       const errorMessage = `Failed to retrieve token list for ${chain}`;
       this.logger.error(error, errorMessage);
@@ -108,11 +126,19 @@ export class Web3Service {
    */
   async getERC20ABI(): Promise<AbiItem> {
     try {
-      return (
-        await this.httpService.axiosRef.get(
-          'https://gist.githubusercontent.com/veox/8800debbf56e24718f9f483e1e40c35c/raw/f853187315486225002ba56e5283c1dba0556e6f/erc20.abi.json',
-        )
-      ).data;
+      let erc20ABI: AbiItem = await this.cacheManager.get('erc20ABI');
+
+      if (!erc20ABI) {
+        erc20ABI = (
+          await this.httpService.axiosRef.get(
+            'https://gist.githubusercontent.com/veox/8800debbf56e24718f9f483e1e40c35c/raw/f853187315486225002ba56e5283c1dba0556e6f/erc20.abi.json',
+          )
+        ).data;
+      }
+
+      await this.cacheManager.set('erc20ABI', erc20ABI);
+
+      return erc20ABI;
     } catch (error) {
       const errorMessage = 'Failed to retrieve ERC20 ABI';
       this.logger.error(error, errorMessage);

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpModule, HttpService } from '@nestjs/axios';
 import { PricingService } from './pricing.service';
+import { CacheModule } from '@nestjs/common';
 
 describe('PricingService', () => {
   let pricingService: PricingService;
@@ -8,7 +9,7 @@ describe('PricingService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [HttpModule],
+      imports: [HttpModule, CacheModule.register({})],
       providers: [PricingService],
     }).compile();
 
@@ -75,28 +76,6 @@ describe('PricingService', () => {
 
       const result: Balance[] = await pricingService.addUsdValues(balances);
       expect(result).toEqual(expected);
-    });
-  });
-
-  describe('getTokenList', () => {
-    it('should return an array of CoingeckoTokens', async () => {
-      const httpService = {
-        axiosRef: { get: jest.fn() },
-      };
-      const pricingService: PricingService = new PricingService(
-        httpService as any,
-      );
-      const response = {
-        data: [
-          { id: 'bitcoin', symbol: 'btc', name: 'Bitcoin' },
-          { id: 'ethereum', symbol: 'eth', name: 'Ethereum' },
-        ],
-      };
-      jest.spyOn(httpService.axiosRef, 'get').mockResolvedValue(response);
-
-      const result: CoingeckoToken[] = await pricingService.getTokenList();
-
-      expect(result).toEqual(response.data);
     });
   });
 

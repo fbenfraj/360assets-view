@@ -2,7 +2,6 @@ import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Web3Service } from './web3.service';
-import { ADDED_TOKENS } from '../../config/token-lists';
 
 describe('Web3Service', () => {
   let web3Service: Web3Service;
@@ -58,7 +57,7 @@ describe('Web3Service', () => {
         listedIn: ['https://example.com/listed-in'],
       },
     ];
-    const filteredTokenList = web3Service.filterTokenList(tokenList);
+    const filteredTokenList = web3Service.filterTokenList('eth', tokenList);
     expect(filteredTokenList).toHaveLength(2);
     expect(filteredTokenList).toContainEqual(
       expect.objectContaining({

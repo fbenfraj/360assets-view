@@ -1,6 +1,6 @@
 import { Logger, Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { TOKEN_LISTS, ADDED_TOKENS } from '../../config/token-lists';
+import { TOKEN_LIST_SOURCES, ADDED_TOKENS } from '../../config/token-lists';
 import { HttpService } from '@nestjs/axios';
 import { AbiItem } from 'web3-utils';
 import { Contract } from 'web3-eth-contract';
@@ -8,16 +8,20 @@ import Web3 from 'web3';
 
 @Injectable()
 export class Web3Service {
-  private web3Instance: Web3;
+  private ethWeb3: Web3;
+  private polyWeb3: Web3;
+  private arbWeb3: Web3;
   private readonly logger = new Logger(Web3Service.name);
 
   constructor(
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
   ) {
-    this.web3Instance = new Web3(
-      this.configService.get<string>('WEB3_RPC_ENDPOINT'),
+    this.ethWeb3 = new Web3(this.configService.get<string>('ETH_RPC_ENDPOINT'));
+    this.polyWeb3 = new Web3(
+      this.configService.get<string>('POLY_RPC_ENDPOINT'),
     );
+    this.arbWeb3 = new Web3(this.configService.get<string>('ARB_RPC_ENDPOINT'));
   }
 
   /**
@@ -28,10 +32,18 @@ export class Web3Service {
    * @throws HttpException if an error occurs while retrieving token list, token amounts or formatting the content.
    */
   async getWalletContent(network: string, wallet: string): Promise<Balance[]> {
+    const web3Instance = this.getWeb3Instance(network);
     const tokenList: ChainToken[] = await this.getTokens(network);
-    const filteredTokenList: ChainToken[] = this.filterTokenList(tokenList);
+    const filteredTokenList: ChainToken[] = this.filterTokenList(
+      network,
+      tokenList,
+    );
 
-    const amounts: any[] = await this.getAmounts(filteredTokenList, wallet);
+    const amounts: any[] = await this.getAmounts(
+      filteredTokenList,
+      wallet,
+      web3Instance,
+    );
     const content: Balance[] = await this.formatContent(
       filteredTokenList,
       amounts,
@@ -48,7 +60,7 @@ export class Web3Service {
    */
   async getTokens(chain: string): Promise<ChainToken[]> {
     try {
-      const tokenSource: string = TOKEN_LISTS[chain];
+      const tokenSource: string = TOKEN_LIST_SOURCES[chain];
       return (await this.httpService.axiosRef.get(tokenSource)).data;
     } catch (error) {
       const errorMessage = `Failed to retrieve token list for ${chain}`;
@@ -73,10 +85,10 @@ export class Web3Service {
    * @param tokenList - The list of ChainToken objects to filter
    * @returns An array of ChainToken objects with addresses present in the ADDED_TOKENS array
    */
-  filterTokenList(tokenList: ChainToken[]): ChainToken[] {
+  filterTokenList(network: string, tokenList: ChainToken[]): ChainToken[] {
     const filteredTokenList: ChainToken[] = tokenList.filter(
       (token: ChainToken) => {
-        return ADDED_TOKENS.includes(token.address);
+        return ADDED_TOKENS[network].includes(token.address);
       },
     );
 
@@ -112,6 +124,7 @@ export class Web3Service {
   async getAmounts(
     filteredTokenList: ChainToken[],
     wallet: string,
+    web3Instance: Web3,
   ): Promise<number[]> {
     try {
       // any is used here because of balanceOf() definition in ERC20 ABI
@@ -119,7 +132,7 @@ export class Web3Service {
       const ERC20_ABI: AbiItem = await this.getERC20ABI();
 
       for (const token of filteredTokenList) {
-        const contract: Contract = new this.web3Instance.eth.Contract(
+        const contract: Contract = new web3Instance.eth.Contract(
           ERC20_ABI,
           token.address,
         );
@@ -174,6 +187,19 @@ export class Web3Service {
       const errorMessage = 'Failed to format wallet content';
       this.logger.error(error, errorMessage);
       throw new HttpException(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  getWeb3Instance(network: string): Web3 {
+    switch (network) {
+      case 'eth':
+        return this.ethWeb3;
+      case 'poly':
+        return this.polyWeb3;
+      case 'arb':
+        return this.arbWeb3;
+      default:
+        return this.ethWeb3;
     }
   }
 }

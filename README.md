@@ -1,30 +1,81 @@
+# Multis coding challenge
+
 <p align="center">
+  <a href="https://multis.com/" target="blank"><img src="https://assets.website-files.com/634004b4bef7e50e67fa8e75/63779c9339ff1e032d4117bf_Multis%20-%20Logo%20transparent.png" width="120" alt="Nest Logo" /></a>
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
-  
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Context
 
-## Description
+We want to allow users to have a 360 view of their assets on several blockchains and financial institutions.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Tech stack
+
+- NestJS (backend framework)
+- NodeJS (Typescript)
+- Jest (testing)
+- Web3js (blockchain interactions)
+- Coingecko API (USD Pricing)
+
+## Problem
+
+As a user, I want a list of all ERC-20 tokens and their balances with their equivalent in USD of a given address in Ethereum mainnet, Polygon, or Arbitrum.
+
+## Requirements
+
+**Endpoint:** `GET http://localhost:8080/balances/{network}/{address}`
+
+**Response:**
+
+```ts
+[
+  {
+    "address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+    "name": "DAI Stablecoin",
+    "symbol": "DAI",
+    "decimals": 18,
+    "balance": "1234990000000000000000",
+    "balanceUsd": 1234.99
+  },
+  ...
+]
+```
+
+## Solutions
+
+To solve the problem of retrieving a list of all ERC-20 tokens and their balances with their equivalent in USD of a given address in Ethereum mainnet, Polygon, or Arbitrum, I have developed a NodeJS (TypeScript) application using the web3 stack and third-party APIs.
+
+The main technical choices I have made for this application are:
+
+I used the NestJS framework to develop this application as it allowed me to create a scalable and maintainable API.
+I used the web3.js library to interact with the Ethereum, Polygon, and Arbitrum blockchains to retrieve the balances of ERC-20 tokens.
+I used the Coingecko API to fetch the USD price of tokens and calculate their balance in USD.
+
+I implemented caching using the CacheManager library to avoid exceeding the rate limits of the Coingecko API and improve the performance of the application.
+To optimize the process and avoid having to check if every token of the blockchain is in the wallet, I chose a "Metamask-like" approach where the user can add his networks and the tokens he wants to check in the target wallet. This means that we only need to check for the specified tokens in the provided networks.
+I added validation and error handling to ensure that the application is robust and can handle errors gracefully.
+
+I believe that the technical choices I have made for this application strike a good balance between simplicity, efficiency, and maintainability. I hope this application meets the requirements and expectations of Multis and showcases my skills and knowledge of the web3 stack.
+
+## Configuration
+
+- Create a `.env` at the root of the folder and enter the following variables:
+
+```bash
+ETH_RPC_ENDPOINT=
+POLY_RPC_ENDPOINT=
+ARB_RPC_ENDPOINT=
+```
+
+- Enter the addresses of the tokens you want to add in the `ADDED_TOKENS` variable in `/config/token-list.ts`
+
+```ts
+{
+	eth: ["address1", "address2"],
+	poly: ["address1", "address2"],
+   arb: ["address1", "address2"]
+}
+```
 
 ## Installation
 
@@ -58,16 +109,7 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
 ## Stay in touch
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-  Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- Author - [Ben Fraj Farouk](https://www.linkedin.com/in/farouk-benfraj/)
+- Twitter - [@f_benfraj](https://twitter.com/f_benfraj)

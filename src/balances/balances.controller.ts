@@ -13,6 +13,7 @@ export class BalancesController {
     @Res() res: Response,
   ) {
     const balances = await this.balancesService.getBalances(network, address);
+
     res.send(balances);
   }
 }

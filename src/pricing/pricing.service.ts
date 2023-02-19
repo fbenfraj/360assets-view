@@ -62,11 +62,21 @@ export class PricingService {
    */
   getTokenList = async (): Promise<CoingeckoToken[]> => {
     try {
-      return this.httpService.axiosRef
-        .get(
-          `https://api.coingecko.com/api/v3/coins/list?include_platform=false`,
-        )
-        .then((response) => response.data);
+      let tokenList: CoingeckoToken[] = await this.cacheManager.get(
+        'tokenList',
+      );
+
+      if (!tokenList) {
+        tokenList = (
+          await this.httpService.axiosRef.get(
+            `https://api.coingecko.com/api/v3/coins/list?include_platform=false`,
+          )
+        ).data;
+      }
+
+      await this.cacheManager.set('tokenList', tokenList);
+
+      return tokenList;
     } catch (error) {
       const errorMessage = `Failed to retrieve token list from Coingecko`;
       this.logger.error(error, errorMessage);
@@ -124,11 +134,13 @@ export class PricingService {
       );
 
       if (!addedTokenPrices) {
-        addedTokenPrices = (
-          await this.httpService.axiosRef.get(
-            `https://api.coingecko.com/api/v3/simple/price?ids=${joinedTokenIds}&vs_currencies=usd`,
-          )
-        ).data;
+        addedTokenPrices =
+          // Coingecko API endpoint to retrieve token prices
+          (
+            await this.httpService.axiosRef.get(
+              `https://api.coingecko.com/api/v3/simple/price?ids=${joinedTokenIds}&vs_currencies=usd`,
+            )
+          ).data;
 
         await this.cacheManager.set(joinedTokenIds, addedTokenPrices);
       }

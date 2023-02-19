@@ -73,7 +73,7 @@ ARB_RPC_ENDPOINT=
 {
 	eth: ["address1", "address2"],
 	poly: ["address1", "address2"],
-   arb: ["address1", "address2"]
+  arb: ["address1", "address2"]
 }
 ```
 

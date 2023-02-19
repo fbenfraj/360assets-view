@@ -13,7 +13,7 @@ We want to allow users to have a 360 view of their assets on several blockchains
 
 - NestJS (backend framework)
 - NodeJS (Typescript)
-- Jest (testing)
+- Jest (testing: e2e, unitary, integration, performance)
 - Web3js (blockchain interactions)
 - Coingecko API (USD Pricing)
 

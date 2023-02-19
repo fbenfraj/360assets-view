@@ -73,6 +73,7 @@ ARB_RPC_ENDPOINT=
 
 ```ts
 const WEB3_CONFIG: Web3Config = {
+  ...
   network_name: {
     rpcEndpoint: 'https://rpc_url',
     tokenListSource: 'https://token_list_url',

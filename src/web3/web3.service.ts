@@ -193,25 +193,30 @@ export class Web3Service {
     amounts: any[],
   ): Promise<Balance[]> {
     try {
-      const content: Balance[] = [];
+      const content: Balance[] = (await this.cacheManager.get('content')) || [];
 
-      for (let index = 0; index < filteredTokenList.length; index++) {
-        // any is used here because of balanceOf() definition in ERC20 ABI
-        const balance: string = await (amounts[index] as any).call();
+      if (content.length === 0) {
+        for (let index = 0; index < filteredTokenList.length; index++) {
+          // any is used here because of balanceOf() definition in ERC20 ABI
+          const balance: string = await (amounts[index] as any).call();
 
-        const formattedBalance: number = this.convertToNumber(
-          balance,
-          filteredTokenList[index].decimals,
-        );
+          const formattedBalance: number = this.convertToNumber(
+            balance,
+            filteredTokenList[index].decimals,
+          );
 
-        content.push({
-          address: filteredTokenList[index].address,
-          name: filteredTokenList[index].name,
-          symbol: filteredTokenList[index].symbol,
-          decimals: filteredTokenList[index].decimals,
-          balance: formattedBalance,
-        });
+          content.push({
+            address: filteredTokenList[index].address,
+            name: filteredTokenList[index].name,
+            symbol: filteredTokenList[index].symbol,
+            decimals: filteredTokenList[index].decimals,
+            balance: formattedBalance,
+          });
+        }
       }
+
+      // Cache the content for 30 seconds
+      await this.cacheManager.set('content', content, 30000);
 
       return content;
     } catch (error) {

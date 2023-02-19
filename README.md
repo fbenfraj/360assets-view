@@ -51,7 +51,7 @@ I used the NestJS framework to develop this application as it allowed me to crea
 I used the web3.js library to interact with the Ethereum, Polygon, and Arbitrum blockchains to retrieve the balances of ERC-20 tokens.
 I used the Coingecko API to fetch the USD price of tokens and calculate their balance in USD.
 
-I implemented caching using the CacheManager library to avoid exceeding the rate limits of the Coingecko API and improve the performance of the application.
+I implemented caching using the CacheManager library to avoid exceeding the rate limits of the Coingecko API and blockchain network calls through Infura to improve the performance of the application.
 To optimize the process and avoid having to check if every token of the blockchain is in the wallet, I chose a "Metamask-like" approach where the user can add his networks and the tokens he wants to check in the target wallet. This means that we only need to check for the specified tokens in the provided networks.
 I added validation and error handling to ensure that the application is robust and can handle errors gracefully.
 

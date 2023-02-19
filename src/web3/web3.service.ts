@@ -6,7 +6,6 @@ import {
   CACHE_MANAGER,
   Inject,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { WEB3_CONFIG } from '../../config/web3.config';
 import { HttpService } from '@nestjs/axios';
 import { AbiItem } from 'web3-utils';
@@ -16,21 +15,16 @@ import { Cache } from 'cache-manager';
 
 @Injectable()
 export class Web3Service {
-  private ethWeb3: Web3;
-  private polyWeb3: Web3;
-  private arbWeb3: Web3;
+  private web3Instances: Record<string, Web3> = {};
   private readonly logger = new Logger(Web3Service.name);
 
   constructor(
-    private readonly configService: ConfigService,
     private readonly httpService: HttpService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {
-    this.ethWeb3 = new Web3(this.configService.get<string>('ETH_RPC_ENDPOINT'));
-    this.polyWeb3 = new Web3(
-      this.configService.get<string>('POLY_RPC_ENDPOINT'),
-    );
-    this.arbWeb3 = new Web3(this.configService.get<string>('ARB_RPC_ENDPOINT'));
+    for (const network in WEB3_CONFIG) {
+      this.web3Instances[network] = new Web3(WEB3_CONFIG[network].rpcEndpoint);
+    }
   }
 
   /**
@@ -232,15 +226,10 @@ export class Web3Service {
    * @returns A Web3 instance for the specified network
    */
   getWeb3Instance(network: string): Web3 {
-    switch (network) {
-      case 'eth':
-        return this.ethWeb3;
-      case 'poly':
-        return this.polyWeb3;
-      case 'arb':
-        return this.arbWeb3;
-      default:
-        return this.ethWeb3;
-    }
+    return this.web3Instances[network];
+  }
+
+  createWeb3(networkData: NetworkData): Web3 {
+    return new Web3(networkData.rpcEndpoint);
   }
 }

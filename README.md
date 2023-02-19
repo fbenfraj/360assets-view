@@ -1,7 +1,7 @@
 # Multis coding challenge
 
 <p align="center">
-  <a href="https://multis.com/" target="blank"><img src="https://assets.website-files.com/634004b4bef7e50e67fa8e75/63779c9339ff1e032d4117bf_Multis%20-%20Logo%20transparent.png" width="120" alt="Nest Logo" /></a>
+  <a href="https://multis.com/" target="blank"><img src="https://img.api.cryptorank.io/coins/150x150.multis1668674551900.png" width="120" alt="Nest Logo" /></a>
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
 

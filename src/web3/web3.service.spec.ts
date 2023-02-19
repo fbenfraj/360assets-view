@@ -80,7 +80,7 @@ describe('Web3Service', () => {
   });
 
   describe('getTokens', () => {
-    it('should return an array of ChainToken objects with the addresses specified in ADDED_TOKENS', async () => {
+    it('should return an array of ChainToken objects with the addresses specified in addedTokens', async () => {
       const chain = 'eth';
       const tokens = await web3Service.getTokens(chain);
 

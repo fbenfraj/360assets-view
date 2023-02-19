@@ -7,7 +7,7 @@ import {
   Inject,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { TOKEN_LIST_SOURCES, ADDED_TOKENS } from '../../config/token-lists';
+import { WEB3_CONFIG } from '../../config/web3.config';
 import { HttpService } from '@nestjs/axios';
 import { AbiItem } from 'web3-utils';
 import { Contract } from 'web3-eth-contract';
@@ -74,7 +74,7 @@ export class Web3Service {
    */
   async getTokens(chain: string): Promise<ChainToken[]> {
     try {
-      const tokenSource: string = TOKEN_LIST_SOURCES[chain];
+      const tokenSource: string = WEB3_CONFIG[chain].tokenListSource;
 
       let tokens: ChainToken[] = await this.cacheManager.get(tokenSource);
 
@@ -104,14 +104,14 @@ export class Web3Service {
 
   /**
    * Filters a list of ChainToken objects to only include tokens with addresses
-   * present in the ADDED_TOKENS array.
+   * present in the addedTokens array.
    * @param tokenList - The list of ChainToken objects to filter
-   * @returns An array of ChainToken objects with addresses present in the ADDED_TOKENS array
+   * @returns An array of ChainToken objects with addresses present in the addedTokens array
    */
   filterTokenList(network: string, tokenList: ChainToken[]): ChainToken[] {
     const filteredTokenList: ChainToken[] = tokenList.filter(
       (token: ChainToken) => {
-        return ADDED_TOKENS[network].includes(token.address);
+        return WEB3_CONFIG[network].addedTokens.includes(token.address);
       },
     );
 

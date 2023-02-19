@@ -15,7 +15,7 @@ describe('AppController (e2e)', () => {
     await app.init();
   });
 
-  it('should the balance of the ETHEREUM wallet 0xb21090C8f6bAC1ba614A3F529aAe728eA92B6487', () => {
+  it('should return the balance of the ETHEREUM wallet 0xb21090C8f6bAC1ba614A3F529aAe728eA92B6487', () => {
     return request(app.getHttpServer())
       .get('/balances/eth/0xb21090C8f6bAC1ba614A3F529aAe728eA92B6487')
       .then((res) => {
@@ -30,7 +30,7 @@ describe('AppController (e2e)', () => {
       });
   });
 
-  it('should the balance of the POLYGON wallet 0xb21090C8f6bAC1ba614A3F529aAe728eA92B6487', () => {
+  it('should return the balance of the POLYGON wallet 0xb21090C8f6bAC1ba614A3F529aAe728eA92B6487', () => {
     return request(app.getHttpServer())
       .get('/balances/poly/0x592Df3c5C823884fA44A854e7bF9c5a03a7Fb1E2')
       .then((res) => {
@@ -45,7 +45,7 @@ describe('AppController (e2e)', () => {
       });
   });
 
-  it('should the balance of the ARBITRUM wallet 0xb21090C8f6bAC1ba614A3F529aAe728eA92B6487', () => {
+  it('should return the balance of the ARBITRUM wallet 0xb21090C8f6bAC1ba614A3F529aAe728eA92B6487', () => {
     return request(app.getHttpServer())
       .get('/balances/arb/0xb87a436B93fFE9D75c5cFA7bAcFff96430b09868')
       .then((res) => {

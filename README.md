@@ -67,14 +67,18 @@ POLY_RPC_ENDPOINT=
 ARB_RPC_ENDPOINT=
 ```
 
-- Enter the addresses of the tokens you want to add in the `ADDED_TOKENS` variable in `/config/token-list.ts`
+- Enter the addresses of the tokens you want to add in the `addedTokens` field of the corresponding network in the `WEB3_CONFIG` variable (`/config/web3.config.ts`).
+  The supported networks are Ethereum Mainnet, Polygon and Arbitrum.
+- If you want to add a new network and new token addresses, you can also add it in the same `WEB3_CONFIG` variable in this form:
 
 ```ts
-{
-	eth: ["address1", "address2"],
-	poly: ["address1", "address2"],
-  arb: ["address1", "address2"]
-}
+const WEB3_CONFIG: Web3Config = {
+  network_name: {
+    rpcEndpoint: 'https://rpc_url',
+    tokenListSource: 'https://token_list_url',
+    addedTokens: ['0x000', '0x001', ...],
+  },
+};
 ```
 
 ## Installation

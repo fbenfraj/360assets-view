@@ -18,10 +18,6 @@ type TokenListSources = {
   [networkName: string]: string;
 };
 
-type AddedTokensList = {
-  [networkName: string]: string[];
-};
-
 type IdMapping = {
   [key: string]: string;
 };

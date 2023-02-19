@@ -229,6 +229,11 @@ export class Web3Service {
     return this.web3Instances[network];
   }
 
+  /**
+   * Creates a new instance of the Web3 object with the specified network data.
+   * @param networkData - The network data containing the RPC endpoint to connect to.
+   * @returns A new instance of the Web3 object connected to the specified network.
+   */
   createWeb3(networkData: NetworkData): Web3 {
     return new Web3(networkData.rpcEndpoint);
   }

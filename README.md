@@ -75,12 +75,14 @@ ARB_RPC_ENDPOINT=
 const WEB3_CONFIG: Web3Config = {
   ...
   network_name: {
-    rpcEndpoint: 'https://rpc_url',
+    rpcEndpoint: process.env.NEW_NETWORK_RPC_ENDPOINT,
     tokenListSource: 'https://token_list_url',
     addedTokens: ['0x000', '0x001', ...],
   },
 };
 ```
+
+Note: You will also have to add the RPC_ENPOINT_URL for that network in the `.env` file.
 
 ## Installation
 

@@ -42,7 +42,6 @@ export class Web3Service {
    */
   async getWalletContent(network: string, wallet: string): Promise<Balance[]> {
     const web3Instance = this.getWeb3Instance(network);
-
     const addressIsValid = web3Instance.utils.isAddress(wallet);
     if (!addressIsValid) {
       throw new HttpException('Invalid wallet address', HttpStatus.BAD_REQUEST);
